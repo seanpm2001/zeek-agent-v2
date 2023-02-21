@@ -43,20 +43,23 @@ using namespace zeek::agent;
 options::LogLevel options::default_log_level = options::LogLevel::info;
 options::LogType options::default_log_type = options::LogType::Stdout;
 filesystem::path options::default_log_path = {};
+filesystem::path options::default_socket_file_name = "zeek-agent.$$.sock";
 
 static struct option long_driver_options[] = {
     // clang-format off
+    {"autodoc", no_argument, nullptr, 'D'},
     {"config", required_argument, nullptr, 'c'},
     {"execute", required_argument, nullptr, 'e'},
     {"help", no_argument, nullptr, 'h'},
     {"interactive", no_argument, nullptr, 'i'},
     {"log-level", required_argument, nullptr, 'L'},
-    {"autodoc", no_argument, nullptr, 'D'},
+    {"remote", no_argument, nullptr, 'r'},
+    {"socket", no_argument, nullptr, 's'},
+    {"terminate-on-disconnect", no_argument, nullptr, 'N'},
     {"test", no_argument, nullptr, 'T'},
     {"use-mock-data", no_argument, nullptr, 'M'},
-    {"terminate-on-disconnect", no_argument, nullptr, 'N'},
-    {"zeek", required_argument, nullptr, 'z'},
     {"version", no_argument, nullptr, 'v'},
+    {"zeek", required_argument, nullptr, 'z'},
     {nullptr, 0, nullptr, 0}
     // clang-format on
 };
@@ -77,6 +80,7 @@ static void usage(const filesystem::path& name) {
         "  -e | --execute <STMT>            SQL statement to execute immediately, then quit"
         "  -h | --help                      Show usage information\n"
         "  -i | --interactive               Spawn interactive console\n"
+        "  -r | --remote [<SOCKET>]         Connect interactive console to running agent\n"
         "  -v | --version                   Print version information\n"
         "  -z | --zeek <host>[:port]        Connect to Zeek at given address\n"
         "\n", cfg);
@@ -101,8 +105,8 @@ Result<Nothing> Options::parseArgv(const std::vector<std::string>& argv) {
 #endif
 
     while ( true ) {
-        int c =
-            getopt_long(static_cast<int>(argv_.size()), argv_.data(), "DL:MNTc:e:hivz:", long_driver_options, nullptr);
+        int c = getopt_long(static_cast<int>(argv_.size()), argv_.data(), "DL:MNTc:e:hirs:vz:", long_driver_options,
+                            nullptr);
         if ( c < 0 )
             return Nothing();
 
@@ -129,6 +133,8 @@ Result<Nothing> Options::parseArgv(const std::vector<std::string>& argv) {
             case 'c': config_file = optarg; break;
             case 'e': execute = optarg; break;
             case 'i': interactive = true; break;
+            case 'r': mode = options::Mode::RemoteConsole; break;
+            case 's': socket = filesystem::path(optarg); break;
             case 'z': zeek_destinations.emplace_back(optarg); break;
 
             case 'v': std::cerr << "Zeek Agent v" << VersionLong << std::endl; exit(0);
@@ -152,6 +158,7 @@ void Options::debugDump() const {
                      (log_level ? options::to_string(*log_level) : "<not set>"));
     ZEEK_AGENT_DEBUG("configuration", "[option] log.type: {}", (log_type ? to_string(*log_type) : "<not set>"));
     ZEEK_AGENT_DEBUG("configuration", "[option] log.path: {}", (log_path ? log_path->string() : "<not set>"));
+    ZEEK_AGENT_DEBUG("configuration", "[option] socket: {}", (socket ? socket->string() : "<not set>"));
     ZEEK_AGENT_DEBUG("configuration", "[option] use-mock-data: {}", use_mock_data);
     ZEEK_AGENT_DEBUG("configuration", "[option] terminate-on-disconnect: {}", terminate_on_disconnect);
     ZEEK_AGENT_DEBUG("configuration", "[option] zeek.groups: {}", join(zeek_groups, ", "));
@@ -239,6 +246,19 @@ Options Options::default_() {
     auto path = platform::configurationFile();
     if ( path && filesystem::is_regular_file(*path) )
         options.config_file = *path;
+
+    if ( ! options.socket ) {
+        const char* env = getenv("ZEEK_AGENT_SOCKET");
+        if ( env && *env )
+            options.socket = env;
+        else {
+            filesystem::path socket_dir = "/tmp";
+            if ( auto d = platform::dataDirectory() )
+                socket_dir = *d;
+
+            options.socket = socket_dir / replace(options::default_socket_file_name, "$$", frmt("{}", getuid()));
+        }
+    }
 
     return options;
 }

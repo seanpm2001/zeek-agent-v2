@@ -21,6 +21,8 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_BINARY_DIR}/include)
 
 add_executable(zeek-agent main.cc ${APP_ICON_RESOURCE_WINDOWS})
 add_target_options(zeek-agent PRIVATE)
+target_compile_options(zeek-agent PRIVATE -fsanitize=address)
+target_link_options(zeek-agent PRIVATE -fsanitize=address)
 
 add_subdirectory(core)
 add_subdirectory(io)

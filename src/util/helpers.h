@@ -325,7 +325,7 @@ extern std::pair<std::string, std::string> rsplit1(std::string s, const std::str
  *
  * \note This function is not UTF8-aware.
  */
-std::string replace(std::string s, std::string o, std::string n);
+extern std::string replace(const std::string& s, const std::string& o, const std::string& n);
 
 /**
  * Returns true if a string begins with another.

@@ -24,16 +24,6 @@ it stable. We are interested in any feedback you may have.
 
 #### Contents
 <!-- begin table of contents -->
-- [Getting Started](#getting-started)
-    - [Zeek Agent](#zeek-agent)
-    - [Zeek Package](#zeek-package)
-- [Zeek API](#zeek-api)
-- [Interactive Usage](#interactive-usage)
-- [Table Reference](#table-reference)
-- [Status](#status)
-- [Getting in Touch](#getting-in-touch)
-- [License](#license)
-- [History](#history)
 <!-- end table of contents -->
 
 ## Getting Started

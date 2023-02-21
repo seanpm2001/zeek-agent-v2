@@ -5,4 +5,7 @@ target_sources(zeek-agent
         ascii-table.cc
         helpers.cc
         result.cc
+        socket.cc
+        socket.posix.cc
 )
+#socket.posix.cc
