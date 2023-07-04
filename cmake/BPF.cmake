@@ -27,6 +27,7 @@ endif ()
 macro (generate_bpf_code target name src)
     set(lib "bpf_${name}")
     add_library(${lib} ${src})
+    add_dependencies(${lib} bpftool)
     target_include_directories(${lib} PRIVATE ${BPF_INCLUDE_DIR})
     target_compile_options(${lib} PRIVATE -target bpf -O2 -D__TARGET_ARCH_${bpf_arch}) # -O2 because of https://bugzilla.redhat.com/show_bug.cgi?id=1618958
 
